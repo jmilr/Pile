@@ -1,0 +1,169 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass:meta";
+@use "sass:math";
+
+@use "config" as config;
+@use "functions" as fn;
+
+@mixin breakpoint($breakpoint, $direction: min, $orientation: width) {
+  $map: if($orientation == height, config.$vbreakpoints, config.$breakpoints);
+
+  @if map.has-key($map, $breakpoint) {
+    $value: map.get($map, $breakpoint);
+
+    @if $direction == max {
+      $next: if($breakpoint == small, map.get($map, medium), $value);
+      $value: $next - 1px;
+    }
+
+    @media screen and (#{$direction}-#{$orientation}: fn.rem-calc($value)) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+@function _direction-properties($property, $direction) {
+  @if $direction == x or $direction == inline {
+    @return ($property + "-left", $property + "-right");
+  }
+
+  @if $direction == y or $direction == block {
+    @return ($property + "-top", $property + "-bottom");
+  }
+
+  @return ($property + "-#{$direction}");
+}
+
+@mixin spacer($property, $spacers: config.$spacers) {
+  @each $size, $space in $spacers {
+    &--#{$size} {
+      #{$property}: #{$space};
+    }
+  }
+
+  @each $direction in config.$utility-directions {
+    @each $size, $space in $spacers {
+      &--#{$direction}--#{$size} {
+        $properties: _direction-properties($property, $direction);
+
+        @each $prop in $properties {
+          #{$prop}: #{$space};
+        }
+      }
+    }
+  }
+}
+
+@mixin padding { @include spacer(padding); }
+@mixin margin { @include spacer(margin); }
+
+@mixin borders($borders: config.$borders) {
+  @each $size, $width in $borders {
+    &--#{$size} {
+      border-style: solid;
+      border-width: fn.border-width($size, $borders);
+    }
+  }
+
+  @each $direction in config.$utility-directions {
+    @each $size, $width in $borders {
+      &--#{$direction}--#{$size} {
+        border-style: solid;
+        $properties: _direction-properties(border, $direction);
+
+        @each $prop in $properties {
+          #{$prop}: fn.border-width($size, $borders);
+        }
+      }
+    }
+  }
+}
+
+@mixin radii($radii: config.$radii) {
+  @each $size, $radius in $radii {
+    &--#{$size} {
+      border-radius: $radius;
+    }
+  }
+}
+
+@mixin colour-set($modifier: null, $properties...) {
+  $pseudo-selectors: (before, after, hover, active, focus, disabled);
+  $class-suffix: null;
+
+  @if $modifier != null and list.index($pseudo-selectors, $modifier) {
+    $class-suffix: ":#{$modifier}";
+  } @else if $modifier != null {
+    $properties: list.append($properties, $modifier);
+  }
+
+  @each $helper, $value in config.$helpers {
+    $class-name: $helper;
+
+    @if $class-suffix != null {
+      $class-name: $helper + $class-suffix;
+    }
+
+    &--#{$class-name} {
+      @each $property in $properties {
+        @if meta.type-of($property) == "list" and list.length($property) >= 2 {
+          #{list.nth($property, 1)}: fn.color($helper, list.nth($property, 2));
+        } @else {
+          #{$property}: fn.color($helper);
+        }
+      }
+    }
+  }
+}
+
+@mixin colour-set-state($state, $properties...) {
+  @include colour-set($state, $properties...);
+}
+
+@mixin scale($level, $breakpoint: small) {
+  $ratio: fn.type-ratio($breakpoint);
+  $base: fn.type-base($breakpoint);
+
+  @if $level == h1 {
+    font-size: $base * fn.pow($ratio, 4);
+  } @else if $level == h2 {
+    font-size: $base * fn.pow($ratio, 3);
+  } @else if $level == h3 {
+    font-size: $base * fn.pow($ratio, 2);
+  } @else if $level == h4 {
+    font-size: $base * $ratio;
+  } @else if $level == p {
+    font-size: $base;
+  } @else if $level == small {
+    font-size: $base * 0.875;
+  }
+}
+
+@mixin size($level) {
+  @include scale($level, small);
+
+  @include breakpoint(medium) {
+    @include scale($level, medium);
+  }
+
+  @include breakpoint(large) {
+    @include scale($level, large);
+  }
+
+  @include breakpoint(huge) {
+    @include scale($level, huge);
+  }
+}
+
+@mixin fluid-size($min, $preferred, $max) {
+  font-size: fn.clamp-fluid($min, $preferred, $max);
+}
+
+@mixin font-feature($features...) {
+  font-feature-settings: $features;
+  -moz-font-feature-settings: $features;
+  -webkit-font-feature-settings: $features;
+}

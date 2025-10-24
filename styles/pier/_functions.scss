@@ -1,0 +1,164 @@
+@use "sass:color";
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+@use "sass:string";
+@use "sass:meta";
+
+@use "config" as config;
+
+@function rem-calc($size, $base: config.$root-font-size) {
+  @if meta.type-of($size) == "number" and math.is-unitless($size) {
+    $size: $size * 1px;
+  }
+
+  @if meta.type-of($base) == "number" and math.is-unitless($base) {
+    $base: $base * 1px;
+  }
+
+  @return math.div($size, $base) * 1rem;
+}
+
+@function pow($number, $exponent) {
+  $value: 1;
+
+  @if $exponent > 0 {
+    @for $i from 1 through $exponent {
+      $value: $value * $number;
+    }
+  }
+
+  @return $value;
+}
+
+@function _resolve-color-token($token, $tone) {
+  @if meta.type-of($token) == "map" {
+    @if map.has-key($token, $tone) {
+      @return map.get($token, $tone);
+    }
+
+    @if map.has-key($token, base) {
+      @return map.get($token, base);
+    }
+  }
+
+  @return $token;
+}
+
+@function _apply-tone-adjustment($base, $tone) {
+  @if not map.has-key(config.$color-steps, $tone) {
+    @return $base;
+  }
+
+  $adjustments: map.get(config.$color-steps, $tone);
+  $lightness: map.get($adjustments, lightness);
+  $saturation: map.get($adjustments, saturation);
+
+  @return color.adjust(
+    $base,
+    $lightness: $lightness,
+    $saturation: $saturation,
+  );
+}
+
+@function color($name, $tone: base, $helpers: config.$helpers) {
+  @if $tone == uri {
+    @return '%23' + string.slice('#{color($name)}', 2);
+  }
+
+  @if not map.has-key($helpers, $name) {
+    @error "Unknown color `#{$name}`. Available helpers: #{map.keys($helpers)}";
+  }
+
+  $token: map.get($helpers, $name);
+  $value: _resolve-color-token($token, $tone);
+
+  @if meta.type-of($value) == "color" {
+    @return $value;
+  }
+
+  @if $tone == base or meta.type-of($tone) == "list" {
+    @return $value;
+  }
+
+  @return _apply-tone-adjustment($value, $tone);
+}
+
+@function contrast-color($name, $helpers: config.$helpers) {
+  @return color($name, contrast, $helpers);
+}
+
+@function spacer($key, $spacers: config.$spacers, $fallback: null) {
+  @if map.has-key($spacers, $key) {
+    @return map.get($spacers, $key);
+  }
+
+  @if $fallback != null {
+    @return $fallback;
+  }
+
+  @error "Unknown spacer `#{$key}`. Available spacers: #{map.keys($spacers)}";
+}
+
+@function border-width($key, $borders: config.$borders, $fallback: null) {
+  @if map.has-key($borders, $key) {
+    $value: map.get($borders, $key);
+    @if meta.type-of($value) == "number" and math.is-unitless($value) {
+      @return $value * 1px;
+    }
+    @return $value;
+  }
+
+  @if $fallback != null {
+    @return $fallback;
+  }
+
+  @error "Unknown border width `#{$key}`. Available border widths: #{map.keys($borders)}";
+}
+
+@function radius($key: base, $radii: config.$radii, $fallback: null) {
+  @if map.has-key($radii, $key) {
+    @return map.get($radii, $key);
+  }
+
+  @if $fallback != null {
+    @return $fallback;
+  }
+
+  @error "Unknown radius `#{$key}`. Available radii: #{map.keys($radii)}";
+}
+
+@function font-family($key) {
+  @if map.has-key(config.$fonts, $key) {
+    @return map.get(config.$fonts, $key);
+  }
+
+  @error "Unknown font family `#{$key}`. Available families: #{map.keys(config.$fonts)}";
+}
+
+@function type-base($breakpoint) {
+  @return map.get(config.$type-base, $breakpoint);
+}
+
+@function type-ratio($breakpoint) {
+  @return map.get(config.$type-ratio, $breakpoint);
+}
+
+@function breakpoint-value($key, $orientation: width) {
+  $map: if($orientation == height, config.$vbreakpoints, config.$breakpoints);
+
+  @if map.has-key($map, $key) {
+    @return map.get($map, $key);
+  }
+
+  @error "Unknown breakpoint `#{$key}` for #{$orientation}. Available: #{map.keys($map)}";
+}
+
+@function clamp-fluid($min, $preferred, $max) {
+  $min-rem: rem-calc($min);
+  $max-rem: rem-calc($max);
+  $min-width: rem-calc(config.$fluid-min-vw);
+  $max-width: rem-calc(config.$fluid-max-vw);
+
+  @return clamp($min-rem, #{$preferred} * (100vw - #{$min-width}) / (#{$max-width} - #{$min-width}), $max-rem);
+}
