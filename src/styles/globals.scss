@@ -1,0 +1,56 @@
+@use '../../styles/pier/reset';
+@use '../../styles/pier/print';
+@use '../../styles/pier/functions' as pierFns;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: pierFns.font-family(primary);
+  background-color: pierFns.color(secondary, darker);
+  color: pierFns.color(primary);
+  display: flex;
+  flex-direction: column;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

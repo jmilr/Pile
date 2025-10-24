@@ -1,0 +1,133 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+@use "sass:meta";
+
+@use "config" as config;
+@use "functions" as fn;
+
+@function _normalise-targets($include) {
+  @if $include == null or $include == all {
+    @return (spaces, radii, colors, fonts, measures, breakpoints);
+  }
+
+  @if meta.type-of($include) != "list" {
+    @return ($include,);
+  }
+
+  @return $include;
+}
+
+@function _should-output($targets, $item) {
+  @return list.index($targets, $item) != null;
+}
+
+@function _color-tones($token) {
+  $tones: (base,);
+
+  @if meta.type-of($token) == "map" {
+    @each $tone in map.keys($token) {
+      @if list.index($tones, $tone) == null {
+        $tones: list.append($tones, $tone);
+      }
+    }
+  }
+
+  @each $tone, $_ in config.$color-steps {
+    @if list.index($tones, $tone) == null {
+      $tones: list.append($tones, $tone);
+    }
+  }
+
+  @return $tones;
+}
+
+@function _color-variable-name($prefix, $name, $tone) {
+  $suffix: "";
+
+  @if $tone != base {
+    $suffix: "-#{$tone}";
+  }
+
+  @return "--#{$prefix}-color-#{$name}#{$suffix}";
+}
+
+@function _container-variable-name($prefix, $name) {
+  @return "--#{$prefix}-container-#{$name}";
+}
+
+@function _breakpoint-variable-name($prefix, $orientation, $name) {
+  @return "--#{$prefix}-breakpoint-#{$orientation}-#{$name}";
+}
+
+@function _normalise-length($value) {
+  @if meta.type-of($value) == "number" and math.is-unitless($value) {
+    @return fn.rem-calc($value);
+  }
+
+  @if meta.type-of($value) == "number" and math.compatible($value, 1px) {
+    @return fn.rem-calc($value);
+  }
+
+  @return $value;
+}
+
+@mixin register(
+  $scope: ":root",
+  $include: all,
+  $prefix: "pier"
+) {
+  $targets: _normalise-targets($include);
+
+  #{$scope} {
+    @if _should-output($targets, spaces) {
+      @each $name, $space in config.$spacers {
+        --#{$prefix}-space-#{$name}: #{$space};
+      }
+    }
+
+    @if _should-output($targets, radii) {
+      @each $name, $radius in config.$radii {
+        --#{$prefix}-radius-#{$name}: #{$radius};
+      }
+    }
+
+    @if _should-output($targets, colors) {
+      @each $name, $token in config.$helpers {
+        $tones: _color-tones($token);
+
+        @each $tone in $tones {
+          #{_color-variable-name($prefix, $name, $tone)}: #{fn.color($name, $tone)};
+        }
+      }
+    }
+
+    @if _should-output($targets, fonts) {
+      @each $name, $_ in config.$fonts {
+        --#{$prefix}-font-#{$name}: #{fn.font-family($name)};
+      }
+      --#{$prefix}-heading-weight: #{config.$heading-weight};
+    }
+
+    @if _should-output($targets, measures) {
+      --#{$prefix}-root-font-size: #{_normalise-length(config.$root-font-size)};
+      --#{$prefix}-column-gutter: #{_normalise-length(config.$column-gutter)};
+      --#{$prefix}-stack-gap: #{_normalise-length(config.$stack-default-gap)};
+      --#{$prefix}-cluster-gap: #{_normalise-length(config.$cluster-default-gap)};
+      --#{$prefix}-cluster-align: #{config.$cluster-align};
+      @each $name, $value in config.$container-widths {
+        #{_container-variable-name($prefix, $name)}: #{_normalise-length($value)};
+      }
+    }
+
+    @if _should-output($targets, breakpoints) {
+      @each $name, $value in config.$breakpoints {
+        #{_breakpoint-variable-name($prefix, width, $name)}: #{_normalise-length($value)};
+      }
+
+      @each $name, $value in config.$vbreakpoints {
+        #{_breakpoint-variable-name($prefix, height, $name)}: #{_normalise-length($value)};
+      }
+    }
+  }
+}

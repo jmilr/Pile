@@ -1,0 +1,121 @@
+@use "sass:map";
+@use "sass:meta";
+
+@use "config" as config;
+@use "grid";
+@use "layout";
+@use "mixins";
+@use "tokens";
+
+$utility-config: (
+  border: (
+    module: mixins,
+    name: borders,
+  ),
+  margin: (
+    module: mixins,
+    name: margin,
+  ),
+  padding: (
+    module: mixins,
+    name: padding,
+  ),
+  radius: (
+    module: mixins,
+    name: radii,
+  ),
+  color: (
+    module: mixins,
+    name: colour-set,
+    args: (color),
+  ),
+  hover-color: (
+    module: mixins,
+    name: colour-set,
+    args: (hover, color),
+  ),
+  background: (
+    module: mixins,
+    name: colour-set,
+    args: (background-color),
+  ),
+  border-color: (
+    module: mixins,
+    name: colour-set,
+    args: (border-color),
+  ),
+  surface: (
+    module: mixins,
+    name: colour-set,
+    args: (background-color, (color contrast)),
+  ),
+  flow: (
+    module: layout,
+    name: stack,
+  ),
+  cluster: (
+    module: layout,
+    name: cluster,
+  ),
+  auto-grid: (
+    module: layout,
+    name: auto-grid,
+  ),
+  container: (
+    module: layout,
+    name: container,
+  ),
+);
+
+@mixin _call-utility($config) {
+  $module: map.get($config, module);
+  $name: map.get($config, name);
+  $args: if(map.has-key($config, args), map.get($config, args), ());
+
+  @include meta.call(meta.get-mixin($name, $module: $module), $args...);
+}
+
+@mixin _responsive-scope($breakpoint) {
+  @include grid.breakpoint($breakpoint) {
+    .#{$breakpoint}\:{
+      @content;
+    }
+  }
+}
+
+@mixin _utility-block() {
+  @each $name, $config in $utility-config {
+    &#{$name} {
+      @include _call-utility($config);
+    }
+  }
+}
+
+@mixin _base-utilities() {
+  @each $name, $config in $utility-config {
+    .#{$name} {
+      @include _call-utility($config);
+    }
+  }
+}
+
+@mixin generate-utilities(
+  $register-tokens: true,
+  $token-scope: ":root",
+  $token-include: all,
+  $token-prefix: "pier"
+) {
+  @if $register-tokens {
+    @include tokens.register($token-scope, $token-include, $token-prefix);
+  }
+
+  @include _base-utilities();
+
+  @each $breakpoint, $settings in config.$grid {
+    @if $breakpoint != small {
+      @include _responsive-scope($breakpoint) {
+        @include _utility-block();
+      }
+    }
+  }
+}

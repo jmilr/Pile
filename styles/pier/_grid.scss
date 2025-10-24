@@ -1,0 +1,159 @@
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+@use "sass:meta";
+
+@use "config" as config;
+@use "functions" as fn;
+@use "mixins" as mixins;
+
+@function _as-length($value) {
+  @if meta.type-of($value) == "number" and math.is-unitless($value) {
+    @return fn.rem-calc($value);
+  }
+
+  @if meta.type-of($value) == "number" and math.compatible($value, 1px) {
+    @return fn.rem-calc($value);
+  }
+
+  @return $value;
+}
+
+@mixin column($columns: config.$column-count, $count: config.$column-count) {
+  $fraction: math.div($columns, $count);
+
+  width: $fraction * 100%;
+  flex: 0 0 $fraction * 100%;
+  max-width: $fraction * 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin offset($columns: config.$column-count, $count: config.$column-count) {
+  $fraction: math.div($columns, $count);
+
+  margin-left: $fraction * 100%;
+  max-width: 100% - ($fraction * 100%);
+}
+
+@mixin row($nest: false) {
+  $width: _as-length(config.$row-width);
+
+  max-width: $width;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@mixin gutter() {
+  $gutter: _as-length(config.$column-gutter);
+  $half: fn.rem-calc(math.div(config.$column-gutter, 2));
+
+  --pier-gutter: #{$gutter};
+  padding-left: $half;
+  padding-right: $half;
+}
+
+@mixin breakpoint($breakpoint, $direction: min, $orientation: width) {
+  @include mixins.breakpoint($breakpoint, $direction, $orientation) {
+    @content;
+  }
+}
+
+@mixin generate-grid() {
+  $half: fn.rem-calc(math.div(config.$column-gutter, 2));
+
+  [class^='row'],
+  .row {
+    @include row();
+    flex: 1 0 100%;
+  }
+
+  .row {
+    &--fluid {
+      max-width: none;
+
+      .row--fluid {
+        max-width: none;
+      }
+    }
+  }
+
+  [class*='col--'] {
+    width: 100%;
+    padding-left: $half;
+    padding-right: $half;
+
+    &.row {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .row {
+      margin-left: -$half;
+      margin-right: -$half;
+    }
+  }
+
+  $small-columns: map.get(map.get(config.$grid, small), columns);
+  $small-offsets: map.get(map.get(config.$grid, small), offsets);
+
+  .offset {
+    &--0 {
+      margin-left: 0;
+      max-width: 100%;
+    }
+
+    @each $offset in $small-offsets {
+      &--#{$offset} {
+        @include offset($offset);
+      }
+    }
+  }
+
+  .col {
+    @each $column in $small-columns {
+      &--#{$column} {
+        @include column($column);
+      }
+    }
+  }
+
+  @each $breakpoint, $settings in config.$grid {
+    @if $breakpoint != small {
+      $columns: map.get($settings, columns);
+      $offsets: map.get($settings, offsets);
+
+      @include breakpoint($breakpoint) {
+        .#{$breakpoint}\:{
+          &col {
+            @each $column in $columns {
+              &--#{$column} {
+                @include column($column);
+              }
+            }
+          }
+
+          &offset {
+            &--0 {
+              margin-left: 0;
+              max-width: 100%;
+            }
+
+            @each $offset in $offsets {
+              &--#{$offset} {
+                @include offset($offset);
+              }
+            }
+          }
+
+          &row--fluid {
+            max-width: 100%;
+          }
+        }
+      }
+    }
+  }
+}

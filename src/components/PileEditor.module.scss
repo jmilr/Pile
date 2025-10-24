@@ -1,0 +1,129 @@
+@use '../../styles/pier/functions' as pier;
+
+$panel-radius: pier.radius(large);
+$panel-padding: pier.spacer(8);
+$panel-gap: pier.spacer(6);
+$field-gap: pier.spacer(4);
+
+.editor {
+  width: min(100%, 56rem);
+  margin: pier.spacer(8) auto;
+  padding: $panel-padding;
+  background-color: pier.color(secondary);
+  color: pier.color(primary);
+  border-radius: $panel-radius;
+  box-shadow: 0 1.5rem 3rem rgba(3, 8, 10, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: $panel-gap;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: pier.spacer(4);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: pier.spacer(4);
+  flex-wrap: wrap;
+}
+
+.button {
+  appearance: none;
+  border: 0;
+  border-radius: pier.radius(base);
+  padding: pier.spacer(4) pier.spacer(6);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background-color: pier.color(default);
+  color: pier.color(secondary);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: pier.color(default, dark);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.secondaryButton {
+  background-color: transparent;
+  color: pier.color(primary);
+  border: 1px solid rgba(3, 8, 10, 0.12);
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: $field-gap;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: pier.spacer(2);
+}
+
+.label {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid rgba(3, 8, 10, 0.12);
+  border-radius: pier.radius(base);
+  padding: pier.spacer(4);
+  background-color: rgba(255, 255, 255, 0.9);
+  color: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: pier.color(default);
+    box-shadow: 0 0 0 3px rgba(254, 93, 132, 0.2);
+  }
+}
+
+.textarea {
+  min-height: 16rem;
+  resize: vertical;
+}
+
+.preview {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: pier.radius(base);
+  border: 1px solid rgba(3, 8, 10, 0.08);
+  padding: pier.spacer(6);
+  overflow-x: auto;
+  color: pier.color(primary);
+}
+
+.preview :global(pre) {
+  background-color: rgba(3, 8, 10, 0.08);
+  padding: pier.spacer(4);
+  border-radius: pier.radius(small);
+  overflow: auto;
+}
+
+.uploadInput {
+  display: none;
+}
